@@ -1,30 +1,58 @@
+/* Global Styles */
 html, body {
-    background-color: lightblue;
-    font-family: Arial, sans-serif;
+    background-color: #f4f7fb;
+    font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
     margin: 0;
+    padding: 0;
+    color: #333;
+}
+
+/* Page Container */
+body {
     padding: 20px;
 }
 
-body {
-    nav {
-        ul {
-            list-style-type: none;
-            padding: 0;
-        }
+/* Navigation Bar */
+nav {
+    background-color: #ffffff;
+    padding: 12px 20px;
+    border-radius: 8px;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+    margin-bottom: 20px;
+}
 
-        li {
-            display: inline;
-            margin-right: 15px;
-        }
+/* Navigation List */
+nav ul {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    gap: 20px;
+}
 
-        a {
-            text-decoration: none;
-            color: #333;
-            font-weight: bold;
+/* Navigation Items */
+nav li {
+    display: inline-block;
+}
 
-            &:hover {
-                color: #0066cc;
-            }
-        }
-    }
-}                
+/* Navigation Links */
+nav a {
+    text-decoration: none;
+    color: #333;
+    font-weight: 600;
+    padding: 6px 10px;
+    border-radius: 4px;
+    transition: all 0.2s ease;
+}
+
+/* Hover Effect */
+nav a:hover {
+    background-color: #0066cc;
+    color: #ffffff;
+}
+
+/* Active Link (optional) */
+nav a.active {
+    background-color: #004a99;
+    color: #fff;
+}
