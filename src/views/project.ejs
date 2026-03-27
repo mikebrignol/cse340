@@ -3,7 +3,8 @@
 <main>
     <h1><%= title %></h1>
         <h2>Project Details</h2>
-        <li><strong><%= project.title %></strong>: <%= project.description %> (<%= project.project_date %>, <%= project.location %>) partner: <a href="/organizations/<%= project.organization_id %>"><%= project.name %></a> <br> <a href="/projects/<%= project.project_id %>">View Details</a></li>
+        <li><strong><%= project.title %></strong>: <%= project.description %> (<%= project.project_date %>, <%= project.location %>) partner: <a href="/organizations/<%= project.organization_id %>"><%= project.name %></a> <br> <a href="/project/<%= project.project_id %>">View Details</a></li>
+        <p><a href="/categories/<%= project.category_id %>">View Category</a></p>
 </main>
 
 <%- include('partials/footer') %>
