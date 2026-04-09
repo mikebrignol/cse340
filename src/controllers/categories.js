@@ -1,4 +1,5 @@
-import { getAllCategories, getCategoryById, getProjectsByCategoryId, createCategory, updateCategory } from '../models/categories.js';
+import { getAllCategories, getCategoryById, getProjectsByCategoryId, createCategory, updateCategory, getCategoriesByProjectId, updateCategoryAssignments } from '../models/categories.js';
+import { getProjectDetails } from '../models/projects.js';
 import { body } from 'express-validator';
 
 const categoryValidation = [
@@ -30,7 +31,7 @@ const showAssignCategoriesForm = async (req, res) => {
 
     const projectDetails = await getProjectDetails(projectId);
     const categories = await getAllCategories();
-    const assignedCategories = await getCategoriesByServiceProjectId(projectId);
+    const assignedCategories = await getCategoriesByProjectId(projectId);
 
     const title = 'Assign Categories to Project';
 

@@ -42,6 +42,7 @@ app.use((req, res, next) => {
     next(); // Pass control to the next middleware or route
 });
 
+
 // Set up session management
 app.use(session({
     secret: 'your-secret-key',
@@ -55,6 +56,12 @@ app.use(flash);
 
 // Middleware to make NODE_ENV available to all templates
 app.use((req, res, next) => {
+    res.locals.isLoggedIn = false;
+    if (req.session && req.session.user) {
+        res.locals.isLoggedIn = true;
+    }
+    res.locals.user = req.session.user || null;
+
     res.locals.NODE_ENV = NODE_ENV;
     next();
 });
