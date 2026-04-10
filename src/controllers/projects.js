@@ -89,6 +89,17 @@ const processEditProjectForm = async (req, res) => {
     const { id } = req.params;
     const { title, description, location, date, organizationId } = req.body;
 
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+        // Loop through validation errors and flash them
+        errors.array().forEach((error) => {
+            req.flash('error', error.msg);
+        });
+
+        // Redirect back to the new project form
+        return res.redirect(`/edit-project/${id}`);
+    }
+
     try {
         // Update the project in the database
         await updateProject(id, title, description, location, date, organizationId);
