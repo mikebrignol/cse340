@@ -1,4 +1,4 @@
-Week 04 Coaching Session Prompt
+Week 05 Coaching Session Prompt
 
 ### ROLE AND CORE INSTRUCTIONS
 
@@ -25,265 +25,142 @@ You must ensure that our discussion covers the core ideas of each of these four 
 
 | Topic ID | Content Domain | AI Action: Ensure Discussion and Code Sharing for... |
 | :--- | :--- | :--- |
-| **Topic 1** | **Handling Form Submissions** | ...Discuss issues surrounding handling form submissions, such as getting the data from the request body and passing it to the appropriate functions. Provide a non-trivial code snippet of form handling logic. |
-| **Topic 2** | **Forms for Updates** | ...Discuss issues around forms that editing entities, including EJS snippets that insert data into forms. Provide a non-trivial EJS snippet used for update forms. |
-| **Topic 3** | **Sessions and Flash Messages** | ...Discuss the purpose of sessions and how flash messages are used in your application. Provide a relevant code snippet showing session or flash message implementation. |
-| **Topic 4** | **Server-side Validation** | ...Discuss your approach to validating user input on the server side. Provide a relevant server-side validation code snippet. |
+| **Topic 1** | **Registration and Password Hashing** | ...Discuss issues around the users table and creating new users including password hashing. Provide a non-trivial code snippet showing password hashing implementation. |
+| **Topic 2** | **Login and Sessions** | ...Discuss login functionality and how sessions are managed in your application. Provide a relevant code snippet showing login logic and session management. |
+| **Topic 3** | **Protected Access Middleware** | ...Discuss the use of middleware to protect routes, including requireLogin and requireRole. Provide a relevant code snippet showing middleware implementation. |
+| **Topic 4** | **Protected Access Links and Navigation** | ...Discuss limiting the view of links in the UI based on user roles. Provide a relevant EJS or HTML snippet showing role-based conditional rendering in navigation. |
 
 ### SESSION CONCLUSION
 
 The session should conclude naturally when we have finished discussing all four topics. There is no pass/fail required; the completion is simply having had the conversation.
+my name
+dont you know my name?
+yes that's my name
+const createUser = async (name, email, passwordHash) => {
+    const default_role = 'user';
+    const query = 
+        INSERT INTO users (name, email, password_hash, role_id) 
+        VALUES ($1, $2, $3, (SELECT role_id FROM roles WHERE role_name = $4)) 
+        RETURNING user_id
+    ;
+    const query_params = [name, email, passwordHash, default_role];
+    
+    const result = await db.query(query, query_params);
 
-Welcome! Just to be clear from the start, this is a coaching session, not a test. It is perfectly okay—and even encouraged—to say "I don't know" or "I made a mistake." That's the fastest way we'll learn today.
-
-Before we dive in—can I confirm your name, and also remind you that this is a safe space where mistakes are part of the process?
-
-First question:
-To get us started with Topic 1, could you paste a non-trivial code snippet from your project that handles a form submission (for example, a POST route or controller logic)?
-
-const processEditProjectForm = async (req, res) => { 
-    // Extract form data from req.body
-    const { id } = req.params;
-    const { title, description, location, date, organizationId } = req.body;
-
-    try {
-        // Update the project in the database
-        await updateProject(id, title, description, location, date, organizationId);
-
-        req.flash('success', 'Service project updated successfully!');
-        res.redirect(/project/${id});
-    } catch (error) {
-        console.error('Error updating project:', error);
-        req.flash('error', 'There was an error updating the service project.');
-        res.redirect(/edit-project/${id});
+    if (result.rows.length === 0) {
+        throw new Error('Failed to create user');
     }
+
+    if (process.env.ENABLE_SQL_LOGGING === 'true') {
+        console.log('Created new user with ID:', result.rows[0].user_id);
+    }
+
+    return result.rows[0].user_id;
 };
 
-Nice, thanks for sharing that—that’s a solid, real-world handler 👍
+That's the part where I create the user. Please e brief 1 question per category
+inside of the controller function like this
+const processUserRegistrationForm = async (req, res) => {
+    const { name, email, password } = req.body;
 
-You’re clearly doing a few important things right here:
+    try {
+        // Hash the password before storing it
+        const salt = await bcrypt.genSalt(10);
+        const passwordHash = await bcrypt.hash(password, salt);
 
-Pulling data from req.params and req.body
-Passing it to a separate function (updateProject) → good separation of concerns
-Using try/catch for error handling
-Providing user feedback with flash messages and redirects
+        // Create the user in the database
+        const userId = await createUser(name, email, passwordHash);
 
-That’s already a strong foundation.
+        // Redirect to the home page after successful registration
+        req.flash('success', 'Registration successful! Please log in.');
+        res.redirect('/');
+    } catch (error) {
+        console.error('Error registering user:', error);
+        req.flash('error', 'An error occurred during registration. Please try again.');
+        res.redirect('/register');
+    }
+};
+Because the course instructor advised us to so. You may provide a clear explanation on that please
+const processLoginForm = async (req, res) => {
+    const { email, password } = req.body;
 
-One thing I want you to think about (and this is very common to miss):
-Right now, you're trusting everything that comes from req.body without checking it first. That ties directly into one of our later topics (validation), but it also affects how safe and reliable this handler is.
+    try {
+        const user = await authenticateUser(email, password);
+        if (user) {
+            // Store user info in session
+            req.session.user = user;
+            req.flash('success', 'Login successful!');
 
-My one question for you:
-Can you walk me through, step by step, what happens from the moment a user clicks “submit” on the edit form to the moment they get redirected—what data flows where, and why you structured it this way?
+            if (res.locals.NODE_ENV === 'development') {
+                console.log('User logged in:', user);
+            }
 
-When the user clicks submit, the form goes through the validation process so we can make sure that the data is comply with the norms and then it goes to to the process to be stored in our database and then we communicate to the user that is submission was successful
+            res.redirect('/dashboard');
+        } else {
+            req.flash('error', 'Invalid email or password.');
+            res.redirect('/login');
+        }
+    } catch (error) {
+        console.error('Error during login:', error);
+        req.flash('error', 'An error occurred during login. Please try again.');
+        res.redirect('/login');
+    }
+};
+We chose to go that route in the course in order to understand what is going under the hood and to have more flexbility in other parts of the code when we want to put it into a variable
+const requireRole = (role) => {
+    return (req, res, next) => {
+        // Check if user is logged in first
+        if (!req.session || !req.session.user) {
+            req.flash('error', 'You must be logged in to access this page.');
+            return res.redirect('/login');
+        }
 
-That’s a solid high-level understanding—you’ve got the right flow in mind 👍
-Submit → validate → store → give feedback.
+        // Check if user's role matches the required role
+        if (req.session.user.role_name !== role) {
+            req.flash('error', 'You do not have permission to access this page.');
+            return res.redirect('/');
+        }
 
-Let’s tighten it a bit by connecting it directly to your actual code, because that’s where deeper learning happens.
-
-Right now, in the snippet you shared:
-
-The request hits your route
-processEditProjectForm runs
-Data is pulled from req.body
-updateProject(...) is called
-Then you flash + redirect
-
-But interestingly, we don’t actually see the validation step in this function, even though you mentioned it—that’s something worth digging into later.
-
-My one question for you:
-Why did you choose to pass all the individual fields (title, description, location, date, organizationId) separately into updateProject instead of passing the entire req.body object?
-
-we did so for control and safety. Be brief with the session
-
-Good—that’s actually the right instinct 👍
-Passing individual fields gives you tighter control over what reaches your database and avoids accidentally trusting unwanted input.
-
-My one question (moving us toward Topic 2):
-Can you paste a non-trivial EJS snippet from your edit form where you pre-fill the fields with existing project data (like value="<%= ... %>")?
-
+        // User has required role, continue
+        next();
+    };
+};
+In the lesson we only have two user type, admin and regular so it was simpler to do it that way and get our grasp onto it
 <main>
     <h1><%= title %></h1>
 
- <form action="/edit-organization/<%= organizationDetails.organization_id %>" method="POST">
-    <div class="form-group">
-      <label for="name">Organization Name</label>
-      <input
-        type="text"
-        id="name"
-        name="name"
-        value="<%= organizationDetails.name %>"
-        maxlength="150"
-        required
-      />
-    </div>
+    <h2>Dashboard</h2>
+    <p>Name: <%= name %></p>
+    <p>Username: <%= email %></p>
+    
+    <% if (projects.length === 0) { %>
+    <p>You are not volunteering for any projects yet.</p>
+  <% } else { %>
+    <ul>
+      <% projects.forEach(project => { %>
+        <li>
+          <h3>
+            <a href="/project/<%= project.project_id %>">
+              <%= project.title %>
+            </a>
+          </h3>
 
-    <div class="form-group">
-      <label for="description">Description</label>
-      <textarea
-        id="description"
-        name="description"
-        maxlength="500"
-        required
-      ><%= organizationDetails.description %></textarea>
-    </div>
+          <p><strong>Organization:</strong> <%= project.organization_name %></p>
+          <p><strong>Location:</strong> <%= project.location %></p>
+          <p><strong>Date:</strong> <%= project.date.toDateString() %></p>
 
-    <div class="form-group">
-      <label for="contactEmail">Contact Email</label>
-      <input
-        type="email"
-        id="contactEmail"
-        name="contactEmail"
-        maxlength="255"
-        required
-        value="<%= organizationDetails.contact_email %>"
-      />
-    </div>
-
-    <div class="form-group">
-      <label for="logoFilename">Logo Filename</label>
-      <input
-        type="text"
-        id="logoFilename"
-        name="logoFilename"
-        maxlength="255"
-        required
-        value="<%= organizationDetails.logo_filename %>"
-      />
-    </div>
-
-
-    <button type="submit">Update Organization</button>
-  </form>
-
+          <!-- Remove volunteer -->
+          <form action="/project/<%= project.project_id %>/unvolunteer" method="POST">
+            <button type="submit">Remove from volunteering</button>
+          </form>
+        </li>
+      <% }); %>
+    </ul>
+  <% } %>
 </main>
 
-Nice—this is a solid update form 👍
-You’re correctly pre-filling inputs using <%= organizationDetails... %>, which is exactly what makes edit forms user-friendly.
-
-Quick observations:
-
-You’re binding existing data into inputs → good UX
-Using required + maxlength → basic client-side validation 👍
-Correct use of <textarea> (placing value inside, not as attribute) → many people get that wrong
-
-Small thing to keep in mind: if validation fails, you’ll usually want to re-render this form with user-submitted values, not just organizationDetails, otherwise users lose what they typed.
-
-My one question (Topic 2 focus):
-If a user submits this form and there’s a validation error, how would you make sure the form re-renders with the user’s attempted input instead of the original database values?
-
-we are redirecting him to the same form with our process controller function
-
-Good instinct—but here’s the catch: a redirect alone won’t preserve the user’s input. After a redirect, you lose req.body, so the form will just reload with the original organizationDetails again.
-
-What you typically need is either:
-
-Re-render (not redirect) with the submitted data, or
-Store the data temporarily (e.g., in session/flash)
-
-My one question (moving us into Topic 3):
-You used req.flash earlier—can you paste a code snippet where you set up or use sessions/flash messages in your app (like middleware or config)?
-
-// Use flash message middleware
-app.use(flash);
-
-// Middleware to make NODE_ENV available to all templates
-app.use((req, res, next) => {
-    res.locals.NODE_ENV = NODE_ENV;
-    next();
-});
-
-// Use the imported router to handle routes
-app.use(router);
-
-// Catch-all route for 404 errors
-app.use((req, res, next) => {
-    const err = new Error('Page Not Found');
-    err.status = 404;
-    next(err);
-});
-// Use flash message middleware
-app.use(flash);
-
-// Middleware to make NODE_ENV available to all templates
-app.use((req, res, next) => {
-    res.locals.NODE_ENV = NODE_ENV;
-    next();
-});
-
-// Use the imported router to handle routes
-app.use(router);
-
-// Catch-all route for 404 errors
-app.use((req, res, next) => {
-    const err = new Error('Page Not Found');
-    err.status = 404;
-    next(err);
-});
-
-Nice—this shows where flash is plugged into your app 👍
-
-One key thing to be aware of: flash depends on sessions. So for this to work properly, you must have something like express-session configured before this middleware.
-
-Also, right now you’re setting flash messages (req.flash(...)) in your controller, but I don’t see where you’re making them available to your views (like res.locals.success or res.locals.error).
-
-My one question (Topic 3 focus):
-Where in your app do you take the flash messages (e.g., req.flash('success')) and pass them to your EJS templates so they can actually be displayed?
-
-We do so in the global middleware in server.js
-
-Perfect—that’s exactly the right approach 👍
-Using a global middleware to attach flash messages to res.locals means every template can access them without passing them explicitly each time.
-
-That sets you up nicely for showing success/error messages consistently across your app.
-
-My one question (Topic 4 – server-side validation):
-Can you show me a server-side validation snippet from one of your controllers where you check user input before saving or updating it?
-
-const processNewOrganizationForm = async (req, res) => {
-    // Check for validation errors
-    const results = validationResult(req);
-    if (!results.isEmpty()) {
-        // Validation failed - loop through errors
-        results.array().forEach((error) => {
-            req.flash('error', error.msg);
-        });
-
-        // Redirect back to the new organization form
-        return res.redirect('/new-organization');
-    }
-
-Perfect—that’s exactly what I was looking for 👍
-
-A few key points here:
-
-You’re using validationResult(req) (probably from express-validator) to catch any issues → solid standard approach.
-Looping through errors and flashing them lets the user see all issues at once.
-Redirecting back is okay, but as we discussed earlier, you might lose the user’s input unless you store it in session/flash.
-
-My one question (Topic 4 focus):
-When validation fails here, how could you modify this flow so that the user doesn’t lose what they already typed when they’re redirected back to the form?
-
-by doing what you said earlier using re render
-
-Exactly ✅
-
-Instead of redirecting, you can re-render the form template and pass in:
-
-The user’s submitted values (req.body) so the inputs stay filled
-Any validation errors (from results.array()) to show next to the relevant fields
-
-That way, the user sees what they typed and what they need to fix—much better UX than losing all their input.
-
-We’ve now covered all four topics:
-
-Form submissions → handled in your processEditProjectForm
-Update forms (EJS) → your organizationDetails pre-filled form
-Sessions & flash messages → req.flash + middleware setup
-Server-side validation → validationResult(req) and flashing errors
-
-You’ve done a great job walking through all of them.
-
-If you want, I can give a quick, concise tip on combining validation + flash + re-render so your forms feel smooth for users. Do you want me to do that?
+    <% if (user && user.role_name === 'admin') { %>
+        <p><a href="/users">View All Users</a></p>
+    <% } %>
+</main>
+I ensure that it is available in my route controller

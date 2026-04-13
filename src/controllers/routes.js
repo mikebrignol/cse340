@@ -3,9 +3,10 @@ import { requireRole } from './users.js';
 import { organizationsPage, showOrganizationDetailsPage, showNewOrganizationForm, processNewOrganizationForm, organizationValidation, showEditOrganizationForm, processEditOrganizationForm } from './organizations.js';
 import { categoriesPage, showCategoryDetailsPage, showAssignCategoriesForm, processAssignCategoriesForm, showEditCategoryForm, showNewCategoryForm, processEditCategoryForm, processNewCategoryForm, categoryValidation } from './categories.js';
 import { projectsPage, showProjectDetailsPage, showNewProjectForm, processNewProjectForm, projectValidation, showEditProjectForm, processEditProjectForm } from './projects.js';
-import { showUserRegistrationForm, processUserRegistrationForm, showLoginForm, processLoginForm, processLogout, requireLogin, showDashboard, getAllUsers } from './users.js';
+import { showUserRegistrationForm, processUserRegistrationForm, showLoginForm, processLoginForm, processLogout, requireLogin, showDashboard, getAllUsers, processAddVolunteer, processRemoveVolunteer } from './users.js';
 import { homePage } from './index.js';
 import { testErrorPage } from './errors.js';
+
 
 const router = express.Router();
 
@@ -39,6 +40,9 @@ router.get('/login', showLoginForm);
 router.post('/login', processLoginForm);
 router.get('/logout', processLogout);
 router.get('/dashboard', requireLogin, showDashboard);
+
+router.post('/project/:id/volunteer', requireLogin, processAddVolunteer);
+router.post('/project/:id/unvolunteer', requireLogin, processRemoveVolunteer);
 
 router.get('/users', requireRole('admin'), getAllUsers);
 

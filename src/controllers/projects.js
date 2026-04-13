@@ -2,6 +2,7 @@ import { body, validationResult } from 'express-validator';
 import { getAllprojects, getProjectDetails, getUpcomingProjects, createProject, updateProject } from '../models/projects.js';
 import { getCategoriesByProjectId } from '../models/categories.js';
 import { getAllOrganizations } from '../models/organizations.js';
+import { checkIfUserIsVolunteer } from '../models/users.js';
 
 const projectValidation = [
     body('title')
@@ -37,7 +38,12 @@ const showProjectDetailsPage = async (req, res) => {
     const project = await getProjectDetails(id);
     const title = project ? project.title : 'Project Not Found';
 
-    res.render('project', { title, project, categories });
+    const userId = req.session.user.user_id;
+    const projectId = req.params.id;
+    
+    const isVolunteer = await checkIfUserIsVolunteer(userId, projectId);
+
+    res.render('project', { title, project, categories, isVolunteer });
 };
 
 const showNewProjectForm = async (req, res) => {
