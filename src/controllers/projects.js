@@ -38,7 +38,8 @@ const showProjectDetailsPage = async (req, res) => {
     const project = await getProjectDetails(id);
     const title = project ? project.title : 'Project Not Found';
 
-    const userId = req.session.user.user_id;
+    const user = req.session.user
+    const userId = user ? user.user_id : null;
     const projectId = req.params.id;
     
     const isVolunteer = await checkIfUserIsVolunteer(userId, projectId);

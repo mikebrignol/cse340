@@ -113,3 +113,20 @@ VALUES
 (8, 2),
 (9, 3),
 (10, 3);
+
+
+-- Creating table project_volunteers
+CREATE TABLE project_volunteers (
+    user_id INT NOT NULL,
+    project_id INT NOT NULL,
+
+    PRIMARY KEY (user_id, project_id),
+
+    FOREIGN KEY (user_id)
+        REFERENCES users(user_id)
+        ON DELETE CASCADE,
+
+    FOREIGN KEY (project_id)
+        REFERENCES service_project(project_id)
+        ON DELETE CASCADE
+);
