@@ -44,11 +44,20 @@ app.use((req, res, next) => {
 
 
 // Set up session management
+const isProduction = process.env.NODE_ENV === 'production';
+
+app.set('trust proxy', 1);
+
 app.use(session({
-    secret: 'your-secret-key',
-    resave: false,
-    saveUninitialized: true,
-    cookie: { maxAge: 60 * 60 * 1000 } // Session expires after 1 hour of inactivity
+  secret: process.env.SESSION_SECRET || 'your-secret-key',
+  resave: false,
+  saveUninitialized: false,
+  cookie: {
+    maxAge: 60 * 60 * 1000,
+    secure: isProduction,   // 🔥 only true in production
+    httpOnly: true,
+    sameSite: isProduction ? 'none' : 'lax'
+  }
 }));
 
 // Use flash message middleware
